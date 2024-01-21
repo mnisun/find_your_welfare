@@ -22,7 +22,7 @@ import myapp.views
 from myapp.views import board_delete, reference_delete
 from django.contrib.auth.views import LoginView, LogoutView, LoginView
 from myapp.views import download_reference_file, download_file_view
-
+# 테스트!!!fdsadf
 urlpatterns = [
      path('admin/', admin.site.urls)
     ,path('', myapp.views.index, name='index')
