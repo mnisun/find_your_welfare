@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+{% load static %}
+<link rel="stylesheet" href="{% static 'bootstrap/css/board.css'%}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+    integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<html>
+<header>
+    <!-- ... 이전 코드 ... -->
+    <div class="userId">
+        {% if user.is_authenticated %}
+        <span>환영해요, {{ user.username }}님!</span>
+        <a href="{% url 'logout' %}" id="btn_logout" name="btn_logout">로그아웃</a>
+        {% else %}
+        <a href="{% url 'login' %}" id="btn_login" name="btn_login">로그인</a>
+        <a href="{% url 'signUp' %}" id="btn_signUp" name="btn_signUp">회원가입</a>
+        {% endif %}
+    </div>
+
+    <title>MCR World</title>
+    <div>
+        <h1 style="margin-left: 70px;">Macro World</h1>
+    </div>
+    <div class="nav">
+        <a href="{% url 'index' %}">Home</a>
+        <a style="margin-left:30px;" href="{% url 'reference' %}">자료실</a>
+        <a style="margin-left:30px;" href="{% url 'board' %}">게시판</a>
+        <a style="margin-left:30px;" href="{% url 'announcement' %}">공지사항</a>
+    </div>
+    <hr>
+</header>
+
+<body>
+    <div class="div_class" style="height:500px;">
+        <div>
+            <h2 style="margin-left:auto; margin-right:auto; width:70px;">자료실</h2>
+        </div>
+        <table border="0" frame=void style="width: 90%; margin-left: auto; margin-right:auto; ">
+            <tbody>
+                <tr style="background-color: rgba(251, 169, 5, 0.352);">
+                    <th style="width: 5%;">번호</th>
+                    <th style="width: 15%; text-align: center;">제목</th>
+                    <!-- <th style="width: 40%;">내용</th> -->
+                    <th style="width: 6%;">작성자</th>
+                    <th style="width: 5%;">첨부파일</th>
+                    <th style="width: 10%;">작성일</th>
+                    <th style="width: 5%;">조회수</th>
+                    <th style="width: 2%;"></th>
+                    <th style="width: 2%;"></th>
+                </tr>
+
+                {% for reference_data in reference_page %}
+                <tr>
+                    <td style="text-align: center;">{{ reference_data.id }}</td>
+                    <td style="text-align: left;"><a href="javascript:void(0);"
+                            onclick="openSearchModal('{{ reference_data.id }}')">{{ reference_data.title }}</a></td>
+                    <!-- <td>{{ reference_data.content }}</td> -->
+                    <td style="text-align: center;">{{ reference_data.writer }}</td>
+                    <!-- 다운로드 링크 -->
+                    {% if reference_data.file %}
+                    <td style="text-align: center;"><a href="{% url 'download_file' reference_data.id %}">다운로드</a></td>
+                    {% else %}
+                    <td style="text-align: center;">파일 없음</td>
+                    {% endif %}
+                    <td style="text-align: center;">{{ reference_data.regdate|date:"Y-m-d" }}</td>
+                    <td style="text-align: center;">{{ reference_data.view_cnt}}</td>
+                    {% if user.is_authenticated and reference_data.writer == user.username %}
+                    <td style="text-align: center; font-size: 10px; opacity: 0.3;" class="edit-link" onclick="openEditModal('{{ reference_data.id }}')"><a href="javascript:void(0);">수정</a></td>
+                    <td style="text-align: center; font-size: 10px; opacity: 0.3;" class="delete-link"><a href="{% url 'reference_delete' reference_data.id %}" onclick="return confirm('정말 삭제하시겠습니까?')">삭제</a></td>
+                    {% else %}
+                    <td></td>
+                    <td></td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div>
+        <div style="float:right; margin-right:5%;">
+            {% if user.is_authenticated %}
+            <input style="width:70px; height:30px;" type="button" id="btn_reference_write" name="btn_reference_write" value="글쓰기">
+            {% else %}
+            <input style="width:70px; height:30px;" type="button" value="글쓰기" onclick="msg_login()">
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="width:200px; margin-left:auto; margin-right:auto;" class="pagination">
+        <div style="width:100px; margin-left: auto; margin-right:auto;">
+            <span class="step-links">
+                {% if reference_page.has_previous %}
+                <a href="?page=1">&laquo;</a>
+                <a href="?page={{ reference_page.previous_page_number }}"><</a>
+                {% endif %}
+
+                {% for i in reference_page.paginator.page_range %}
+                {% if reference_page.number == i %}
+                <span class="current">{{ i }}</span>
+                {% else %}
+                <a href="?page={{ i }}">{{ i }}</a>
+                {% endif %}
+                {% endfor %}
+
+                {% if reference_page.has_next %}
+                <a href="?page={{ reference_page.next_page_number }}">></a>
+                <a href="?page={{ reference_page.paginator.num_pages }}">&raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+</body><br>
+
+<!-- 글쓰기 모달 -->
+<div class="modal-wrapper">
+    <div class="modal-body">
+        <div class="btn_modal">
+            <button id="btn_modal_close"><img style="width: 10px; height: 10px;" src="{% static 'image/icons8.png' %}" alt="x-button"></button>
+        </div>
+        <div class="modal-head">
+            <h3 id="title_modal">자료실 글 작성</h3>
+            <label id="lab_title">제목</label><input type="text" id="reference_title" name="reference_title"><br>
+            <hr>
+            <label id="lab_writer">작성자</label><input readonly="text" id="reference_writer" name="reference_writer" value="{{user.username}}"><br>
+            <hr>
+            <label id="lab_content">내용</label><textarea id="reference_content" name="reference_content"></textarea><br>
+
+            <label>첨부파일</label>
+            <form method="post" enctype="multipart/form-data" id="referenceForm">
+                <!-- CSRF 토큰 추가 -->
+                {% csrf_token %}
+                <input type="file" id="upload_file" name="upload_file">
+            </form>
+            <div style="margin-right: auto; margin-left: auto; width: 50px; margin-top: 10px; margin-bottom: 10px;">
+                <input type="button" id="btn_reference_save" class="btn_reference_save" value="저장">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 수정 모달 -->
+<div class="modal-wrapper edit-modal-wrapper">
+    <div class="modal-body">
+        <div class="btn_modal">
+            <button id="btn_edit_modal_close"><img style="width: 10px; height: 10px;" src="{% static 'image/icons8.png' %}" alt="x-button"></button>
+        </div>
+        <div class="modal-head">
+            <h3 id="title_modal">자료실 글 수정</h3>
+            <input type="hidden" id="edit_reference_id" name="edit_reference_id">
+            <label id="lab_title">제목</label><input type="text" id="edit_reference_title"
+                name="edit_reference_title"><br>
+            <hr>
+            <label id="lab_writer">작성자</label><input readonly type="text" id="edit_reference_writer"
+                name="edit_reference_writer" value="{{user.username}}"><br>
+            <hr>
+            <div class="div_content">
+                <label id="lab_content">내용</label><textarea id="edit_reference_content"
+                    name="edit_reference_content" rows="1"></textarea>
+            </div>
+
+            <div style="margin-right: auto; margin-left: auto; width: 50px; margin-top: 10px; margin-bottom: 10px;">
+                <input type="button" id="btn_edit_save" class="btn_edit_save" value="수정">
+                <!-- CSRF 토큰 추가 -->
+                {% csrf_token %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 조회 모달 -->
+<div class="modal-wrapper search-modal-wrapper">
+    <div class="modal-body">
+        <div class="btn_modal">
+            <button id="btn_search_modal_close"><img style="width: 10px; height: 10px;" src="{% static 'image/icons8.png' %}" alt="x-button"></button>
+        </div>
+        <div class="modal-head">
+            <h3 id="title_modal">자료실 글 조회</h3>
+            <input type="hidden" id="search_reference_id" name="edit_reference_id">
+            <label id="lab_title">제목</label><input readonly type="text" id="search_reference_title"
+                name="search_reference_title"><br>
+            <hr>
+            <label id="lab_writer">작성자</label><input readonly type="text" id="search_reference_writer"
+                name="search_reference_writer" value="{{user.username}}"><br>
+            <hr>
+            <div class="div_content">
+                <label id="lab_content">내용</label><textarea readonly id="search_reference_content"
+                    name="search_reference_content" rows="1"></textarea>
+            </div>
+
+            <!-- 댓글 -->
+            <div style="background-color: rgb(218, 218, 204);" class="modal-reply">
+                <hr>
+                <h3 style="margin-left:25px;">댓글</h3>
+                <textarea style="width:920px; height: 60px; margin-left:25px; resize: none;  padding-left: 5px; padding-top: 3px;" id="reference_reply" name="reference_reply" row="1" placeholder="댓글을 작성해주세요"></textarea>
+
+                <button id="btn_reply_save" onclick="Reply_Save()" style="float: right; margin-right:35px;">댓글등록</button>
+                <br>
+                <br>
+                <hr>
+            </div>
+
+            <div style="width: 950px; margin-left: auto; margin-right: auto;">
+                <table style=" width: 940px; margin-left: auto; margin-right:auto;">
+                    <tr>
+                        <th style="width: 70%;">댓글</th>
+                        <th style="width: 10%;">작성자</th>
+                        <th style="width: 20%;">작성일</th>
+                    </tr>
+                    <tbody id="comments_table_body">
+                        <!-- 댓글이 동적으로 추가될 위치 -->
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<footer style="background-color: #393939; font-size: 12px; clear: both; width: 100%; height: 160px; line-height: 1.5em;">
+    <div style="width: 620px; margin: 0 auto 0 auto;">
+        <p style="color: #e5e5e5;"> 
+            <br>상호명 : (주)MacroWorld | 대표이사 : 선지원 | 개인정보책임자 : 선지원(sunw222@naver.com) <br><br>
+            사업자등록번호 : 111-11-11111[사업자 정보확인] | 통신판매업신고 : 1111-경기안양-11111 | 출판사 신고 : 도서출판 매크로(제1111-1호)<br>
+            소재지 : 경기도 안양시 동안구 시민대로 327번길 55 대표전화 010-9129-4764 | FAX : 없음<br>
+            사이트명 : MacroWorld
+            제작기간 : 2023-11-05 ~ 2023-12-00<br>
+            내용 : 해당 페이지의 매크로 프로그램은 업무효율을 위한 목적으로만 사용이 가능하며 <br> 재배포 및 불법으로 사용시 벌금 5억원 또는 200년 이상의 징역에 처할 수 있습니다
+        </p>
+    </div>
+</footer>
+
+</html>
+
+<script>
+    const modalOpenBtn = document.getElementById("btn_reference_write");
+    const modalCloseBtn = document.getElementById("btn_modal_close");
+    const modalWrapper = document.querySelector(".modal-wrapper");
+    const referenceForm = document.getElementById("referenceForm");
+    const referenceTitleInput = document.getElementById("reference_title");
+    const referenceContentTextarea = document.getElementById("reference_content");
+    const referenceWriterInput = document.getElementById("reference_writer");
+
+    window.onload = function(){
+        modalOpenBtn.addEventListener("click", () => {
+            modalWrapper.style.display = "flex";
+        });
+    }
+
+    modalCloseBtn.addEventListener("click", () => {
+        // 모달이 닫힐 때 input과 textarea를 비운다.
+        referenceTitleInput.value = "";
+        referenceWriterInput.value = "";
+        referenceContentTextarea.value = "";
+        modalWrapper.style.display = "none";
+    })
+
+    referenceForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        // Form 데이터를 FormData 객체로 만든다.
+        const formData = new FormData(referenceForm);
+
+        // 서버로 Ajax 요청을 보낸다.
+        $.ajax({
+            type: 'POST',
+            url: '{% url "reference" %}',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                alert('게시글이 성공적으로 저장되었습니다.');
+                modalWrapper.style.display = "none";
+                location.reload();
+            },
+            error: function (error) {
+                alert('게시글 저장에 실패했습니다.');
+            }
+        });
+    });
+
+    // 자료실 저장
+    $(document).ready(function () {
+        $("#btn_reference_save").click(function () {
+            var writer = $("#reference_writer").val();
+            var title = $("#reference_title").val();
+            var content = $("#reference_content").val();
+            var fileInput = document.getElementById('upload_file'); // file input 요소
+
+            var formData = new FormData();
+            formData.append('csrfmiddlewaretoken', $('input[name=csrfmiddlewaretoken]').val());
+            formData.append('writer', writer);
+            formData.append('title', title);
+            formData.append('content', content);
+            formData.append('file', fileInput.files[0]); // 첨부 파일 추가
+
+            // reference_data.file이 없을 때 다운로드 버튼을 숨긴다.
+            if (reference_data.file) {
+                $('#downloadBtn').hide();
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: '{% url "reference_write" %}',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    // 성공적으로 저장되었을 때의 처리
+                    alert('게시글이 성공적으로 저장되었습니다.');
+                    modalWrapper.style.display = "none";  // 저장 후 모달 닫기
+                    location.reload();
+                },
+                error: function (error) {
+                    // 저장에 실패했을 때의 처리
+                    alert('게시글 저장에 실패했습니다.');
+                }
+            });
+        });
+    });
+
+    function msg_login(){
+        alert("로그인이 필요합니다.")
+    }
+
+    // 자료실 조회 모달 열기
+    function openReferenceModal(postId, fileName) {
+        // postId와 fileName을 사용하여 서버에 파일 다운로드 URL을 요청
+        $.ajax({
+            type: 'GET',
+            url: '{% url "get_reference_data" %}?postId=' + postId,
+            success: function (response) {
+                // 서버로부터 받은 데이터를 모달에 채워 넣기
+                $("#reference_title").val(response.title);
+                $("#reference_writer").val(response.writer);
+                $("#reference_content").val(response.content);
+
+                // 파일 다운로드 버튼의 링크를 업데이트
+                $("#btn_download").attr("href", "/path/to/download/view/" + postId + "/");
+
+                // 모달 열기
+                modalWrapper.style.display = "flex";
+            },
+            error: function (error) {
+                alert('게시글 조회에 실패했습니다.');
+            }
+        });
+    }
+
+    // 수정 모달 열기
+    function openEditModal(postId) {
+        // postId를 사용하여 서버에 해당 게시물 정보를 요청
+        $.ajax({
+            type: 'GET',
+            url: '{% url "get_reference_data" %}?postId=' + postId,
+            success: function (response) {
+                // 서버로부터 받은 데이터를 수정 모달에 채워 넣기
+                $("#edit_reference_title").val(response.title);
+                $("#edit_reference_writer").val(response.writer);
+                $("#edit_reference_content").val(response.content);
+                $("#edit_reference_id").val(postId);
+
+                // 수정 모달 열기
+                $(".edit-modal-wrapper").css("display", "flex");
+            },
+            error: function (error) {
+                alert('게시글 조회에 실패했습니다.');
+            }
+        });
+    }
+
+    // 조회 모달 열기
+    function openSearchModal(postId) {
+        // postId를 사용하여 서버에 해당 게시물 정보를 요청
+        $.ajax({
+            type: 'GET',
+            url: '{% url "get_reference_data" %}?postId=' + postId,
+            success: function (response) {
+                // 서버로부터 받은 데이터를 수정 모달에 채워 넣기
+                $("#search_reference_title").val(response.title);
+                $("#search_reference_writer").val(response.writer);
+                $("#search_reference_content").val(response.content);
+                $("#search_reference_id").val(postId);
+
+                // 댓글 정보 요청
+                $.ajax({
+                    type:'GET'
+                    ,url:'{% url "get_reference_comments" reference_id=0 %}'.replace('0', postId)
+                    ,success:function(commentResponse){
+                        displayComments(commentResponse.comments);
+                    },
+                    error:function(commentError){
+                        alert("댓글을 불러오지 못했습니다.");
+                    }
+                });
+
+                // 수정 모달 열기
+                $(".search-modal-wrapper").css("display", "flex");
+
+            },
+            error: function (error) {
+                alert('게시글 조회에 실패했습니다.');
+            }
+        });
+    }
+
+    // 수정 모달 닫기
+    $("#btn_edit_modal_close").on("click", function () {
+        $(".edit-modal-wrapper").css("display", "none");
+    });
+
+    // 조회 모달 닫기
+    $("#btn_search_modal_close").on("click", function () {
+        $(".search-modal-wrapper").css("display", "none");
+    });
+
+    // 댓글을 표시하는 기능
+    function displayComments(comments) {
+        // 댓글을 표시하는 로직
+        var tableBody = $("#comments_table_body");
+
+        // 기존 테이블 내용 비우기
+        tableBody.empty();
+
+        // 댓글을 동적으로 추가
+        for (var i = 0; i < comments.length; i++) {
+            var comment = comments[i];
+
+            // 문자열 형태의 날짜를 Date 객체로 변환
+            var regdate = new Date(comment.regdate);
+
+            // 날짜를 연-월-일 형식으로 변환
+            var formattedDate = regdate.getFullYear() + '-' +
+            ('0' + (regdate.getMonth() + 1)).slice(-2) + '-' +
+            ('0' + regdate.getDate()).slice(-2);
+            
+            var row = "<tr><td style='text-align: left;'>" + comment.content + "</td>" +
+                      "<td style='text-align: center;'>"   + comment.writer + "</td>" +
+                      "<td style='text-align: center;'>"   + formattedDate + "</td></tr>";
+            tableBody.append(row);
+        }
+    }
+
+    // 게시물 수정
+    $("#btn_edit_save").on("click", function () {
+        var post_id = $("#edit_reference_id").val();
+        var title = $("#edit_reference_title").val();
+        var content = $("#edit_reference_content").val();
+
+        $.ajax({
+            type: 'POST',
+            url: '{% url "update_reference" %}',
+            data: {
+                'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                'post_id': post_id,
+                'title': title,
+                'content': content
+            },
+            success: function (response) {
+                if (response.success) {
+                    alert('게시글이 성공적으로 수정되었습니다.');
+                    $(".edit-modal-wrapper").css("display", "none");
+                    location.reload();
+                } else {
+                    alert('게시글 수정에 실패했습니다.');
+                }
+            },
+            error: function (error) {
+                alert('게시글 수정에 실패했습니다.');
+            }
+        });
+    });
+
+    // 댓글 저장
+    function Reply_Save(){
+        var writer = $("#board_writer").val();
+        var content = $("#reference_reply").val();
+        var reference_no = $("#search_reference_id").val();
+
+        $.ajax({
+                type: 'POST'
+                , url: '{% url "reference_reply_write" %}'
+                , data: {
+                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+                    ,'writer': writer
+                    ,'content': content
+                    ,'search_reference_id': reference_no
+                },
+                success: function (response) {
+                    // 성공적으로 저장되었을 때의 처리
+                    alert('댓글이 등록되었습니다');
+                    // modalWrapper.style.display = "none";  // 저장 후 모달 닫기
+
+                    location.reload();
+                },
+                error: function (error) {
+                    // 저장에 실패했을 때의 처리
+                    alert('댓글저장이 실패하였습니다');
+                }
+            });
+    }
+
+</script>

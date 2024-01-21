@@ -1,0 +1,41 @@
+/*로그인폼*/
+.login_title{
+    width:86px;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+.form-group{
+    width:55px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#lab_id, #lab_pw{
+    font-size: 15px;
+}
+
+.form-control_id, .form-control_pw2{
+    margin-bottom: 40px;
+}
+
+.form-control_pw{
+    margin-bottom: 40px;
+}
+
+.form-control_id, .form-control_pw{
+    height: 40px;
+    width: 350px;
+}
+
+#btn_login{
+    height: 100px;
+    width: 350px;
+}
+
+/*회원가입*/
+.signUp_title{
+    width:120px;
+    margin-left: auto;
+    margin-right: auto;
+}

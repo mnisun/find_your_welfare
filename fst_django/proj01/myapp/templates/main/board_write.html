@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+{% load static %}
+<link rel="stylesheet" href="{% static 'bootstrap/css/board.css'%}">
+<script>
+        // 글쓰기 팝업창 열기
+        function open_modal(){
+        $('#modal_board_write').modal('show');
+    }
+</script>
+<html>
+    <div id="modal_board_write" name="modal_board_write" class="modal_overlay">
+        <div class="model_window"></div>
+    </div>
+</html>

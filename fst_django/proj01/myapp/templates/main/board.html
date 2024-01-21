@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+{% load static %}
+<link rel="stylesheet" href="{% static 'bootstrap/css/board.css'%}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+    integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<html>
+
+<header>
+    <!-- ... 이전 코드 ... -->
+    <div class="userId">
+        {% if user.is_authenticated %}
+        <span>환영해요, {{ user.username }}님!</span>
+        <a href="{% url 'logout' %}" id="btn_logout" name="btn_logout">로그아웃</a>
+        {% else %}
+        <a href="{% url 'login' %}" id="btn_login" name="btn_login">로그인</a>
+        <a href="{% url 'signUp' %}" id="btn_signUp" name="btn_signUp">회원가입</a>
+        {% endif %}
+    </div>
+    <!-- ... 이후 코드 ... -->
+
+    <title>MCR World</title>
+    <div>
+        <h1 style="margin-left: 70px;">Macro World</h1>
+    </div>
+    <div class="nav">
+        <!-- <input href="{% url 'board' %}" type="button" id="btn_board" name="btn_board" value="게시판"> -->
+        <a href="{% url 'index' %}">Home</a>
+        <a style="margin-left:30px;" href="{% url 'reference' %}">자료실</a>
+        <a style="margin-left:30px;" href="{% url 'board' %}">게시판</a>
+        <a style="margin-left:30px;" href="{% url 'announcement' %}">공지사항</a>
+        <!-- <input type="button" id="btn_announcement" name="btn_announcement" value="공지사항"> -->
+    </div>
+    <hr>
+</header>
+
+<body>
+    
+    <div class="div_class" style="height:500px;">
+        <div>
+            <h2 style="margin-left:auto; margin-right:auto; width:70px;">게시판</h2>
+        </div>
+        <table border="0" frame=void style="width: 90%; margin-left: auto; margin-right:auto;">
+            <tbody>
+                <tr style="background-color: rgba(5, 5, 249, 0.352);">
+                    <th style="width: 5%;">번호</th>
+                    <th style="width: 15%; text-align: center;">제목</th>
+                    <!-- <th style="width: 40%;">내용</th> -->
+                    <th style="width: 10%;">작성자</th>
+                    <th style="width: 10%;">작성일</th>
+                    <th style="width: 5%">조회수</th>
+                    <th style="width: 2%;"></th>
+                    <th style="width: 2%;"></th>
+                </tr>
+
+                {% for board_data in board_page %}
+                <tr>
+                    <td style="text-align: center;">{{ board_data.id }}</td>
+                    <td style="text-align: left;"><a href="javascript:void(0);" onclick="openSearchModal('{{ board_data.id }}')">{{ board_data.title }}</a></td>
+                    <td style="text-align: center;">{{ board_data.writer }}</td>
+                    <td style="text-align: center;">{{ board_data.regdate|date:"Y-m-d" }}</td>
+                    <td style="text-align: center;">{{ board_data.view_cnt }}</td>
+                    <!--로그인 아이디와 작성자가 일치할 경우 삭제버튼 활성화-->
+                    {% if user.is_authenticated and board_data.writer == user.username %}
+                    <td class="comm_edit" style="text-align: center; font-size: 10px; opacity: 0.3;" onclick="openEditModal('{{ board_data.id }}')"><a href="javascript:void(0);">수정</a></td>
+                    <td style="text-align: center; font-size: 10px; opacity: 0.3;"><a href="#" onclick="confirmDelete('{{ board_data.id }}')">삭제</a></td>
+                    {% else %}
+                    <td></td>
+                    <td></td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+    </div>
+    <div>
+        <div style="float:right; margin-right:5%;">
+            {% if user.is_authenticated %}
+            <input style="width:70px; height:30px;" type="button" id="btn_board_write" name="btn_board_write" value="글쓰기">
+            {% else %}
+            <input style="width:70px; height:30px;" type="button" value="글쓰기" onclick="msg_login()">
+            {% endif %}
+        </div>
+    </div>
+    <div style="width:200px; margin-left:auto; margin-right:auto;" class="pagination">
+        <div style="width:100px; margin-left: auto; margin-right:auto;">
+            <span class="step-links" >
+                {% if board_page.has_previous %}
+                <a href="?page=1">&laquo;</a>
+                <a href="?page={{ board_page.previous_page_number }}"><</a>
+                {% endif %}
+
+                {% for i in board_page.paginator.page_range %}
+                {% if board_page.number == i %}
+                <span class="current">{{ i }}</span>
+                {% else %}
+                <a href="?page={{ i }}">{{ i }}</a>
+                {% endif %}
+                {% endfor %}
+
+                {% if board_page.has_next %}
+                <a href="?page={{ board_page.next_page_number }}">></a>
+                <a href="?page={{ board_page.paginator.num_pages }}">&raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+</body><br>
+
+<!-- 글쓰기 모달 -->
+<div class="modal-wrapper">
+    <div class="modal-body">
+        <div class="btn_modal">
+            <button id="btn_modal_close"><img style="width: 10px; height: 10px;" src="{% static 'image/icons8.png' %}" alt="x-button"></button>
+            <!-- CSRF 토큰 추가 -->
+            {% csrf_token %}
+        </div>
+        <div class="modal-head">
+            <h3 id="title_modal">게시글 작성</h3>
+            <label id="lab_title">제목</label><input type="text" id="board_title" name="board_title"><br>
+            <hr>
+            <label id="lab_writer">작성자</label><input readonly type="text" id="board_writer" name="board_writer"
+                value="{{user.username}}"><br>
+            <hr>
+            <div class="div_content">
+                <label id="lab_content">내용</label><textarea id="board_content" name="board_content" rows="1"></textarea>
+            </div>
+            <div style="margin-right: auto; margin-left: auto; width: 50px; margin-top: 10px; margin-bottom: 10px;">
+                <input type="button" id="btn_board_save" class="btn_board_save" value="저장">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 수정 모달 -->
+<div class="modal-wrapper edit-modal-wrapper">
+    <div class="modal-body">
+        <div class="btn_modal">
+            <button id="btn_edit_modal_close"><img style="width: 10px; height: 10px;" src="{% static 'image/icons8.png' %}" alt="x-button"></button>
+            <!-- CSRF 토큰 추가 -->
+            {% csrf_token %}
+        </div>
+        <div class="modal-head">
+            <h3 id="title_modal">게시글 수정</h3>
+            <input type="hidden" id="edit_board_id" name="edit_board_id">
+            <label id="lab_title">제목</label><input type="text" id="edit_board_title" name="edit_board_title"><br>
+            <hr>
+            <label id="lab_writer">작성자</label><input readonly type="text" id="edit_board_writer" name="edit_board_writer"
+                value="{{user.username}}"><br>
+            <hr>
+            <div class="div_content">
+                <label id="lab_content">내용</label><textarea id="edit_board_content" name="edit_board_content" rows="1"></textarea>
+            </div>
+            <div style="margin-right: auto; margin-left: auto; width: 50px; margin-top: 10px; margin-bottom: 10px;">
+                <input type="button" id="btn_edit_save" class="btn_edit_save" value="수정">
+                <!-- CSRF 토큰 추가 -->
+                {% csrf_token %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 글조회 모달 -->
+<div class="modal-wrapper search-modal-wrapper">
+
+    <div class="modal-body">
+        <div class="btn_modal">
+            <button id="btn_search_modal_close"><img style="width: 10px; height: 10px;" src="{% static 'image/icons8.png' %}" alt="x-button"></button>
+            <!-- CSRF 토큰 추가 -->
+            {% csrf_token %}
+        </div>
+        <div class="modal-head">
+            <h3 id="title_modal">게시글 조회</h3>
+            <input type="hidden" id="search_board_id" name="search_board_id">
+            <label id="lab_title">제목</label><input readonly type="text" id="search_board_title" name="search_board_title"><br>
+            <hr>
+            <label id="lab_writer">작성자</label><input readonly type="text" id="search_board_writer" name="search_board_writer"
+                value="{{user.username}}"><br>
+            <hr>
+            <div class="div_content">
+                <label id="lab_content">내용</label><textarea readonly id="search_board_content" name="search_board_content" rows="1"></textarea>
+            </div><br>
+            
+            <!-- 댓글 -->
+            <div style="background-color: rgb(218, 218, 204);" class="modal-reply">
+                <hr>
+                <h3 style="margin-left:25px;">댓글</h3>
+                {% if user.is_authenticated %}
+                <textarea style="width:920px; height: 60px; margin-left:25px; resize: none; padding-left: 5px; padding-top: 3px;" id="board_reply" name="board_reply" row="1" placeholder="댓글을 작성해주세요"></textarea>
+                <button id="btn_reply_save" onclick="Reply_Save()" style="float: right; margin-right:35px;">댓글등록</button>
+                {% else %}
+                <textarea readonly style="width:920px; height: 60px; margin-left:25px; resize: none; padding-left: 5px; padding-top: 3px;" id="board_reply" name="board_reply" row="1" placeholder="로그인 후 작성 가능합니다."></textarea>
+                <button onclick="msg_login()" style="float: right; margin-right:35px;">댓글등록</button>
+                {% endif %}
+                
+                <br>
+                <br>
+                <hr>
+            </div>
+
+            <div style="width: 950px; margin-left: auto; margin-right: auto;">
+                <table style=" width: 940px; margin-left: auto; margin-right:auto;">
+                    <tr>
+                        <th style="width: 80%;">댓글</th>
+                        <th style="width: 10%;">작성자</th>
+                        <th style="width: 10%;">작성일</th>
+                    </tr>
+                    <tbody id="comments_table_body">
+                        <!-- 댓글이 동적으로 추가될 위치 -->
+                    </tbody>
+                </table>
+            </div>
+
+
+        </div>
+    </div>
+</div>
+
+<footer style="background-color: #393939; font-size: 12px; clear: both; width: 100%; height: 160px; line-height: 1.5em;">
+    <div style="width: 620px; margin: 0 auto 0 auto;">
+        <p style="color: #e5e5e5;"> 
+            <br>상호명 : (주)MacroWorld | 대표이사 : 선지원 | 개인정보책임자 : 선지원(sunw222@naver.com) <br><br>
+            사업자등록번호 : 111-11-11111[사업자 정보확인] | 통신판매업신고 : 1111-경기안양-11111 | 출판사 신고 : 도서출판 매크로(제1111-1호)<br>
+            소재지 : 경기도 안양시 동안구 시민대로 327번길 55 대표전화 010-9129-4764 | FAX : 없음<br>
+            사이트명 : MacroWorld
+            제작기간 : 2023-11-05 ~ 2023-12-00<br>
+            내용 : 해당 페이지의 매크로 프로그램은 업무효율을 위한 목적으로만 사용이 가능하며 <br> 재배포 및 불법으로 사용시 벌금 5억원 또는 200년 이상의 징역에 처할 수 있습니다
+        </p>
+    </div>
+</footer>
+
+</html>
+
+<script>
+    const modalOpenBtn         = document.getElementById("btn_board_write");
+    const modalCloseBtn        = document.getElementById("btn_modal_close");
+    const modalWrapper         = document.querySelector(".modal-wrapper");
+    const boardTitleInput      = document.getElementById("board_title");
+    const boardWriterInput     = document.getElementById("board_writer");
+    const boardContentTextarea = document.getElementById("board_content");
+
+    window.onload = function(){
+        modalOpenBtn.addEventListener("click", () => {
+            modalWrapper.style.display = "flex";
+        });
+    }
+
+    modalCloseBtn.addEventListener("click", () => {
+        // 모달이 닫힐 때 input과 textarea를 비워줍니다.
+        boardTitleInput.value = "";
+        boardWriterInput.value = "";
+        boardContentTextarea.value = "";
+        modalWrapper.style.display = "none";
+    });
+
+    // 게시물 저장
+    $(document).ready(function () {
+        $("#btn_board_save").click(function () {
+            var writer = $("#board_writer").val();
+            var title = $("#board_title").val();
+            var content = $("#board_content").val();
+
+            $.ajax({
+                type: 'POST'
+                , url: '{% url "board_write" %}'
+                , data: {
+                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                    'writer': writer,
+                    'title': title,
+                    'content': content
+                },
+
+                success: function (response) {
+                    // 성공적으로 저장되었을 때의 처리
+                    alert('게시글이 성공적으로 저장되었습니다.');
+                    modalWrapper.style.display = "none";  // 저장 후 모달 닫기
+
+                    location.reload();
+                },
+                error: function (error) {
+                    // 저장에 실패했을 때의 처리
+                    alert('게시글 저장에 실패했습니다.');
+                }
+            });
+        });
+    });
+
+    
+    function msg_login(){
+        alert("로그인이 필요합니다.")
+    }
+
+    // 게시물 조회 모달 열기
+    function openBoardModal(postId) {
+        // postId를 사용하여 서버에 해당 게시물 정보를 요청
+        $.ajax({
+            type: 'GET',
+            url: '{% url "get_board_data" %}?postId=' + postId,
+            success: function (response) {
+                // 서버로부터 받은 데이터를 모달에 채워 넣기
+                $("#board_title").val(response.title);
+                $("#board_writer").val(response.writer);
+                $("#board_content").val(response.content);
+
+                // 모달 열기
+                modalWrapper.style.display = "flex";
+            },
+            error: function (error) {
+                alert('게시글 조회에 실패했습니다.');
+            }
+        });
+    }
+
+    // 삭제확인
+    function confirmDelete(postId) {
+        if (confirm("정말 삭제하시겠습니까??") == true) {
+            // 새로운 폼 엘리먼트 생성
+            var form = document.createElement('form');
+            form.action = "{% url 'board_delete' post_id=0 %}".replace('0', postId);
+            form.method = 'post';
+
+            // CSRF 토큰을 폼에 추가
+            var csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = "{{ csrf_token }}";
+            form.appendChild(csrfInput);
+
+            alert("게시글이 삭제되었습니다.")
+
+            // 폼을 body에 추가하고 전송
+            document.body.appendChild(form);
+            form.submit();
+        } else {
+            return false;
+        }
+    }
+
+    // 수정 모달 열기
+    function openEditModal(postId) {
+        // postId를 사용하여 서버에 해당 게시물 정보를 요청
+        $.ajax({
+            type: 'GET',
+            url: '{% url "get_board_data" %}?postId=' + postId,
+            success: function (response) {
+                // 서버로부터 받은 데이터를 수정 모달에 채워 넣기
+                $("#edit_board_title").val(response.title);
+                $("#edit_board_writer").val(response.writer);
+                $("#edit_board_content").val(response.content);
+                $("#edit_board_id").val(postId);
+
+                // 수정 모달 열기
+                $(".edit-modal-wrapper").css("display", "flex");
+            },
+            error: function (error) {
+                alert('게시글 조회에 실패했습니다.');
+            }
+        });
+    }
+
+    // 조회 모달 열기
+    function openSearchModal(postId) {
+    // postId를 사용하여 서버에 해당 게시물 정보를 요청
+        $.ajax({
+            type: 'GET',
+            url: '{% url "get_board_data" %}?postId=' + postId,
+            success: function (response) {
+                // 서버로부터 받은 데이터를 수정 모달에 채워 넣기
+                $("#search_board_title").val(response.title);
+                $("#search_board_writer").val(response.writer);
+                $("#search_board_content").val(response.content);
+                $("#search_board_id").val(postId);
+
+                // 댓글 정보 요청
+                $.ajax({
+                    type:'GET'
+                    ,url:'{% url "get_comments" board_id=0 %}'.replace('0', postId)
+                    ,success:function(commentResponse){
+                        displayComments(commentResponse.comments);
+                    },
+                    error:function(commentError){
+                        alert("댓글을 불러오지 못했습니다.");
+                    }
+                });
+
+                // 수정 모달 열기
+                $(".search-modal-wrapper").css("display", "flex");
+
+            },
+            error: function (error) {
+                alert('게시글 조회에 실패했습니다.');
+            }
+        });
+    }
+
+    function closeSearchModal(){
+        $(".edit-modal-wrapper").css("display", "none");
+    }
+
+    // 수정 모달 닫기
+    $("#btn_edit_modal_close").on("click", function () {
+        $(".edit-modal-wrapper").css("display", "none");
+    });
+
+    // 조회 모달 닫기
+    $("#btn_search_modal_close").on("click", function () {
+        $(".search-modal-wrapper").css("display", "none");
+    });
+
+    // 게시물 수정
+    $("#btn_edit_save").on("click", function () {
+        var post_id = $("#edit_board_id").val();
+        var title = $("#edit_board_title").val();
+        var content = $("#edit_board_content").val();
+
+        $.ajax({
+            type: 'POST',
+            url: '{% url "update_board" %}',
+            data: {
+                'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                'post_id': post_id,
+                'title': title,
+                'content': content
+            },
+            success: function (response) {
+                if (response.success) {
+                    alert('게시글이 성공적으로 수정되었습니다.');
+                    $(".edit-modal-wrapper").css("display", "none");
+                    location.reload();
+                } else {
+                    alert('게시글 수정에 실패했습니다.');
+                }
+            },
+            error: function (error) {
+                alert('게시글 수정에 실패했습니다.');
+            }
+        });
+    });
+
+    // 댓글을 표시하는 기능
+    function displayComments(comments) {
+        // 댓글을 표시하는 로직
+        var tableBody = $("#comments_table_body");
+
+        // 기존 테이블 내용 비우기
+        tableBody.empty();
+
+        // 댓글을 동적으로 추가
+        for (var i = 0; i < comments.length; i++) {
+            var comment = comments[i];
+
+            // 문자열 형태의 날짜를 Date 객체로 변환
+            var regdate = new Date(comment.regdate);
+
+            // 날짜를 연-월-일 형식으로 변환
+            var formattedDate = regdate.getFullYear() + '-' +
+            ('0' + (regdate.getMonth() + 1)).slice(-2) + '-' +
+            ('0' + regdate.getDate()).slice(-2);
+
+            var row = "<tr><td style='text-align: left;'>" + comment.content + "</td>" +
+                      "<td style='text-align: center;'>"   + comment.writer + "</td>" +
+                      "<td style='text-align: center;'>"   + formattedDate + "</td></tr>";
+            tableBody.append(row);
+        }
+    }
+ 
+    // 댓글 저장
+    function Reply_Save(){
+        var writer = $("#board_writer").val();
+        var content = $("#board_reply").val();
+        var board_no = $("#search_board_id").val();
+
+        $.ajax({
+                type: 'POST'
+                , url: '{% url "board_reply_write" %}'
+                , data: {
+                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+                    ,'writer': writer
+                    ,'content': content
+                    ,'search_board_id': board_no
+                },
+
+                success: function (response) {
+                    // 성공적으로 저장되었을 때의 처리
+                    alert('댓글이 등록되었습니다');
+
+                    location.reload();
+                },
+                error: function (error) {
+                    // 저장에 실패했을 때의 처리
+                    alert('댓글저장이 실패하였습니다');
+                }
+            });
+    }
+</script>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+{% load static %}
+<link rel="stylesheet" href="{% static 'bootstrap/css/board.css'%}">
+<link rel="stylesheet" href="{% static 'bootstrap/css/img_slide.css'%}">
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<html>
+<header>
+    <!-- ... 이전 코드 ... -->
+    <div class="userId">
+        {% if user.is_authenticated %}
+        <span>환영해요, {{ user.username }}님!</span>
+        <a href="{% url 'logout' %}" id="btn_logout" name="btn_logout">로그아웃</a>
+        {% else %}
+        <a href="{% url 'login' %}" id="btn_login" name="btn_login">로그인</a>
+        <a href="{% url 'signUp' %}" id="btn_signUp" name="btn_signUp">회원가입</a>
+        {% endif %}
+    </div>
+    <!-- ... 이후 코드 ... -->
+
+    <title>MCR World</title>
+    <div>
+        <h1 style="margin-left: 70px;">Macro World</h1>
+    </div>
+    <div class="nav">
+        <!-- <input href="{% url 'board' %}" type="button" id="btn_board" name="btn_board" value="게시판"> -->
+        <a id="a_home" href="{% url 'index' %}">Home</a>
+        <a style="margin-left:30px;" id="a_reference" href="{% url 'reference' %}">자료실</a>
+        <a style="margin-left:30px;" id="a_board" href="{% url 'board' %}">게시판</a>
+        <a style="margin-left:30px;" id="a_announcement" href="{% url 'announcement' %}">공지사항</a>
+        <!-- <input type="button" id="btn_announcement" name="btn_announcement" value="공지사항"> -->
+    </div>
+    <hr>
+</header>
+
+<body>
+    <div class="kind_wrap" style="margin-top:50px;">
+        <div class="kind_slider">
+          <ul class="slider">
+              <li><img src="{% static 'image/AI_1.jpeg' %}" alt="AI Image 1"></li>
+              <li><img src="{% static 'image/AI_2.jpeg' %}" alt="AI Image 2"></li>
+          </ul>
+        </div>
+        <div class="arrow">
+            <a href="" class="prev"><</a>
+            <a href="" class="next">></a>
+        </div>
+      </div>   
+
+    <div class="table-container" style="display:flex; width: 1300px; margin-top:50px; margin-left: auto; margin-right: auto; margin-bottom:50px;">
+        
+        <!-- 자료실 테이블 -->
+        <div id="idx_reference" style="width:400px;  margin-right: auto; margin-left: auto;" >
+            <table style="border: 1px solid #444444; " class="reference-table">
+                <caption>자료실</caption>
+                <thead>
+                    <tr>
+                        <th style="width: 10px;">No</th>
+                        <th style="width: 200px;">제목</th>
+                        <th style="width: 100px;">작성자</th>
+                        <th style="width: 190px;">작성일</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reference_data in reference_page %}
+                    <tr>
+                        <td style="text-align: center;">{{ reference_data.id }}</td>
+                        <td style="text-align: center;">{{ reference_data.title }}</td>
+                        <td style="text-align: center;">{{ reference_data.writer }}</td>
+                        <td style="text-align: center;">{{ reference_data.regdate|date:"Y-m-d" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- 게시판 테이블 -->
+        <div style="margin-left: 20px; width:400px; margin-right: auto; margin-left: auto;" id="idx_board">
+            <table style="border: 1px solid #444444;" class="board-table">
+                <caption>게시판</caption>
+                <thead>
+                    <tr>
+                        <th style="width: 10px;">No</th>
+                        <th style="width: 200px;">제목</th>
+                        <th style="width: 100px;">작성자</th>
+                        <th style="width: 190px;">작성일</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for board_data in board_page %}
+                    <tr>
+                        <td style="text-align: center;">{{ board_data.id }}</td>
+                        <td style="text-align: center;">{{ board_data.title }}</td>
+                        <td style="text-align: center;">{{ board_data.writer }}</td>
+                        <td style="text-align: center;">{{ board_data.regdate|date:"Y-m-d" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div style=" margin-left: 20px; width:400px; margin-right: auto; margin-left: auto;" id="idx_announcement">
+            <!-- 공지사항 테이블 -->
+            <table style="border: 1px solid #444444;" class="announcement-table">
+                <caption>공지사항</caption>
+                <thead>
+                    <tr>
+                        <th style="width: 10px;">No</th>
+                        <th style="width: 200px;">제목</th>
+                        <th style="width: 100px;">작성자</th>
+                        <th style="width: 190px;">작성일</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for post in postlist_page %}
+                    <tr>
+                        <td style="text-align: center;">{{ post.id }}</td>
+                        <td style="text-align: center;">{{ post.title }}</td>
+                        <td style="text-align: center;">{{ post.writer }}</td>
+                        <td style="text-align: center;">{{ post.regdate|date:"Y-m-d" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+    </div>
+</body>
+<footer style="background-color: #393939; font-size: 12px; clear: both; width: 100%; height: 160px; line-height: 1.5em;">
+    <div style="width: 620px; margin: 0 auto 0 auto;">
+        <p style="color: #e5e5e5;"> 
+            <br>상호명 : (주)MacroWorld | 대표이사 : 선지원 | 개인정보책임자 : 선지원(sunw222@naver.com) <br><br>
+            사업자등록번호 : 111-11-11111[사업자 정보확인] | 통신판매업신고 : 1111-경기안양-11111 | 출판사 신고 : 도서출판 매크로(제1111-1호)<br>
+            소재지 : 경기도 안양시 동안구 시민대로 327번길 55 대표전화 010-9129-4764 | FAX : 없음<br>
+            사이트명 : MacroWorld
+            제작기간 : 2023-11-05 ~ 2023-12-00<br>
+            내용 : 해당 페이지의 매크로 프로그램은 업무효율을 위한 목적으로만 사용이 가능하며 <br> 재배포 및 불법으로 사용시 벌금 5억원 또는 200년 이상의 징역에 처할 수 있습니다
+        </p>
+    </div>
+</footer>
+
+</html>
+
+<script>
+
+    /* 슬라이드 관련 */
+    window.onload = function() {
+      const kindWrap =  document.querySelector('.kind_wrap');
+      const slider = kindWrap.querySelector('.slider');
+      const slideLis = slider.querySelectorAll('li')
+      const moveButton = kindWrap.querySelector('.arrow');
+    
+      /* ul 넓이 계산해 주기 */
+      const liWidth = slideLis[0].clientWidth;
+      const sliderWidth = liWidth * slideLis.length;
+      slider.style.width = `${sliderWidth}px` ;
+    
+      /* 리스너 설치하기 */
+      let currentIdx = 0; // 슬라이드 현재 번호
+      let translate = 0; // 슬라이드 위치 값
+      moveButton.addEventListener('click', moveSlide);
+    
+      function moveSlide(event) {
+        event.preventDefault();
+        if (event.target.className === 'next') {
+          if (currentIdx !== slideLis.length -1) {
+            translate -= liWidth;
+            slider.style.transform = `translateX(${translate}px)`;
+            currentIdx += 1;
+          }
+        } else if (event.target.className === 'prev') {
+            if (currentIdx !== 0) {
+              translate += liWidth;
+              slider.style.transform = `translateX(${translate}px)`;
+              currentIdx -= 1;
+            }
+          }
+      }
+    }
+    </script>
