@@ -11,7 +11,11 @@
     <div class="userId">
         {% if user.is_authenticated %}
         <span>환영해요, {{ user.username }}님!</span>
-        <a href="{% url 'logout' %}" id="btn_logout" name="btn_logout">로그아웃</a>
+        <!-- <a href="{% url 'logout' %}" id="btn_logout" name="btn_logout">로그아웃</a> -->
+        <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <input type="submit" value="로그아웃"/>
+        </form>
         {% else %}
         <a href="{% url 'login' %}" id="btn_login" name="btn_login">로그인</a>
         <a href="{% url 'signUp' %}" id="btn_signUp" name="btn_signUp">회원가입</a>
