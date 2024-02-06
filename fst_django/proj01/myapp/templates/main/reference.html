@@ -10,7 +10,7 @@
     <!-- ... 이전 코드 ... -->
     <div class="userId">
         {% if user.is_authenticated %}
-        <span>환영해요, {{ user.username }}님!</span>
+        <span>환영해요, {{ user.username }}님</span>
         <!-- <a href="{% url 'logout' %}" id="btn_logout" name="btn_logout">로그아웃</a> -->
         <form action="{% url 'logout' %}" method="post">
             {% csrf_token %}
